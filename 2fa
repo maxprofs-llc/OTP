@@ -1,9 +1,12 @@
 #!/bin/bash
+
+DIR="$HOME/.2fa"
+[[ -d $DIR ]] || mkdir -p $DIR
 if [[ ${1} = "rm" ]] ; then
-	FILE="~/.2fa/${2}.gpg"
+	FILE="${DIR}/${2}.gpg"
 	[[ -f $FILE ]] && rm -vf $FILE
 elif [[ ${1} = "add" ]] ; then
-	FILE="~/.2fa/${2}.gpg"
+	FILE="${DIR}/${2}.gpg"
 	[[ -f $FILE ]] && echo "${2} already exists. Remove it first with '2fa rm'" && exit
 	stty -echo
 	printf "2fa TOTP Secret: "
@@ -12,7 +15,7 @@ elif [[ ${1} = "add" ]] ; then
 	printf "\n"
 	gpg -c -o $FILE <(echo $SECRET)
 else
-	FILE="~/.2fa/${1}.gpg"
+	FILE="${DIR}/${1}.gpg"
 	if [[ -f $FILE ]] ; then
 		oathtool -b --totp "$(gpg -q -d ${FILE})"
 	else

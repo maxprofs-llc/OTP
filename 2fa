@@ -1,0 +1,21 @@
+#!/bin/bash
+if [[ ${1} = "rm" ]] ; then
+	FILE="~/.2fa/${2}.gpg"
+	[[ -f $FILE ]] && rm -vf $FILE
+elif [[ ${1} = "add" ]] ; then
+	FILE="~/.2fa/${2}.gpg"
+	[[ -f $FILE ]] && echo "${2} already exists. Remove it first with '2fa rm'" && exit
+	stty -echo
+	printf "2fa TOTP Secret: "
+	read SECRET
+	stty echo
+	printf "\n"
+	gpg -c -o $FILE <(echo $SECRET)
+else
+	FILE="~/.2fa/${1}.gpg"
+	if [[ -f $FILE ]] ; then
+		oathtool -b --totp "$(gpg -q -d ${FILE})"
+	else
+		printf "${1} hasn't been added yet. Use '2fa add %s'\n" "${1}"
+	fi
+fi

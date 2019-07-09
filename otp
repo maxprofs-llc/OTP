@@ -1,24 +1,46 @@
 #!/bin/bash
 
-DIR="$HOME/.2fa"
-[[ -d $DIR ]] || mkdir -p $DIR
-if [[ ${1} = "rm" ]] ; then
-	FILE="${DIR}/${2}.gpg"
-	[[ -f $FILE ]] && rm -vf $FILE
-elif [[ ${1} = "add" ]] ; then
-	FILE="${DIR}/${2}.gpg"
-	[[ -f $FILE ]] && echo "${2} already exists. Remove it first with '2fa rm'" && exit
-	stty -echo
-	printf "2fa TOTP Secret: "
-	read SECRET
-	stty echo
-	printf "\n"
-	gpg -c -o $FILE <(echo $SECRET)
-else
-	FILE="${DIR}/${1}.gpg"
-	if [[ -f $FILE ]] ; then
-		oathtool -b --totp "$(gpg -q -d ${FILE})"
-	else
-		printf "${1} hasn't been added yet. Use '2fa add %s'\n" "${1}"
-	fi
+DIR="$HOME/.otp"
+if [[ ! -d $DIR ]] ; then
+	mkdir -p $DIR
+	chmod 700 $DIR
 fi
+
+function print_help () {
+cat << EOF
+otp is a command line tool to display 2FA totp codes, similar to Google/Lastpass/Microsoft Authenticator mobile apps.
+
+Options:
+--help print this help message and exit
+add <service> Add a service and its TOTP secret
+rm <service> Remove a service
+list List all services stored with otp (at ~/.otp)
+EOF
+}
+
+case "${1}" in
+	"rm")
+		FILE="${DIR}/${2}.gpg"
+		[[ -f $FILE ]] && rm -vf $FILE
+	;;
+	"add")
+		FILE="${DIR}/${2}.gpg"
+		[[ -f $FILE ]] && echo "${2} already exists. Remove it first with '2fa rm'" && exit
+		read -p "2fa TOTP Secret: " -s SECRET
+		gpg -c -o $FILE <(echo $SECRET)
+	;;
+	"list")
+		basename -s .gpg $(ls -1 $DIR)
+	;;
+	"--help" | "-h")
+		print_help
+	;;
+	*)
+		FILE="${DIR}/${1}.gpg"
+		if [[ -f $FILE ]] ; then
+			oathtool -b --totp "$(gpg -q -d ${FILE})"
+		else
+			printf "${1} hasn't been added yet. Use '2fa add %s'\n" "${1}"
+		fi
+	;;
+esac

@@ -11,10 +11,10 @@ cat << EOF
 otp is a command line tool to display 2FA totp codes, similar to Google/Lastpass/Microsoft Authenticator mobile apps.
 
 Options:
---help print this help message and exit
-add <service> Add a service and its TOTP secret
-rm <service> Remove a service
-list List all services stored with otp (at ~/.otp)
+--help 		print this help message and exit
+add    		<service> Add a service and its TOTP secret
+rm     		<service> Remove a service
+list   		List all services stored with otp (at ~/.otp)
 EOF
 }
 

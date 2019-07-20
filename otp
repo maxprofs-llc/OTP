@@ -20,25 +20,25 @@ EOF
 
 case "${1}" in
 	"rm")
-		FILE="${DIR}/${2}.gpg"
+		FILE="${DIR}/${2}.asc"
 		[[ -f $FILE ]] && rm -vf $FILE
 	;;
 	"add")
-		FILE="${DIR}/${2}.gpg"
+		FILE="${DIR}/${2}.asc"
 		[[ -f $FILE ]] && echo "${2} already exists. Remove it first with '2fa rm'" && exit
 		read -p "2fa TOTP Secret: " -s SECRET
-		gpg -c -o $FILE <(echo $SECRET)
+		gpg --armor --output $FILE -c <(echo $SECRET)
 	;;
 	"list")
-		basename -s .gpg $(ls -1 $DIR)
+		basename -s .asc $(ls -1 $DIR)
 	;;
 	"--help" | "-h")
 		print_help
 	;;
 	*)
-		FILE="${DIR}/${1}.gpg"
+		FILE="${DIR}/${1}.asc"
 		if [[ -f $FILE ]] ; then
-			oathtool -b --totp "$(gpg -q -d ${FILE})"
+			oathtool -b --totp "$(gpg --quiet --armor --decrypt ${FILE})"
 		else
 			printf "${1} hasn't been added yet. Use '2fa add %s'\n" "${1}"
 		fi

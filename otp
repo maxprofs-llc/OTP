@@ -38,7 +38,7 @@ case "${1}" in
 	*)
 		FILE="${DIR}/${1}.asc"
 		if [[ -f $FILE ]] ; then
-			oathtool --base32 --totp "$(gpg --quiet --armor --decrypt ${FILE})"
+			oathtool --base32 --totp "$(gpg --quiet --armor --decrypt ${FILE})" | clip
 		else
 			printf "${1} hasn't been added yet. Use '2fa add %s'\n" "${1}"
 		fi

@@ -19,17 +19,17 @@ EOF
 }
 
 case "${1}" in
-	"rm")
+	"--rm" | "-r")
 		FILE="${DIR}/${2}.asc"
 		[[ -f $FILE ]] && rm -vf $FILE
 	;;
-	"add")
+	"--add" | "-a")
 		FILE="${DIR}/${2}.asc"
 		[[ -f $FILE ]] && echo "${2} already exists. Remove it first with '2fa rm'" && exit
 		read -p "2fa TOTP Secret: " -s SECRET
 		gpg --armor --output $FILE -c <(echo $SECRET)
 	;;
-	"list")
+	"--list" | "-l")
 		basename -s .asc $(ls -1 $DIR)
 	;;
 	"--help" | "-h")

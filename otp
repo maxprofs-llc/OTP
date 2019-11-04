@@ -1,47 +1,96 @@
 #!/bin/bash
 
-DIR="$HOME/.otp"
-if [[ ! -d $DIR ]]; then
-	mkdir -p $DIR
-	chmod 700 $DIR
+dir="$HOME/.otp"
+
+if [[ ! -d $dir ]]; then
+	mkdir -p $dir
+	chmod 700 $dir
 fi
 
-function print_help() {
+print_help() {
 	cat <<EOF
 otp is a command line tool to display 2FA totp codes, similar to Google/Lastpass/Microsoft Authenticator mobile apps.
 
 Options:
---help		print this help message and exit
-add 		<service> Add a service and its TOTP secret
-rm	    	<service> Remove a service
-list		List all services stored with otp (at ~/.otp)
+	--help		print this help message and exit
+	--add		<service> Add a service and its TOTP secret
+	--rm		<service> Remove a service
+	--list		List all services stored with otp (at ~/.otp)
 EOF
 }
 
+uid="varunchari@yahoo.com"
+uid="$(cat ${dir}/.uid)"
+
+if [[ $uid == "" ]]; then
+	echo "Set email with --uid"
+	exit 1
+fi
+
+# Now build CLI argss
+service="$2"
+k="${dir}/${service}"
+kg="${k}.gpg"
+
 case "${1}" in
 "--rm" | "-r")
-	FILE="${DIR}/${2}.asc"
-	[[ -f $FILE ]] && rm -vf $FILE
+	[[ -f $FILE ]] && rm -i $kg
 	;;
+"--uid" | "-u")
+	email="$2"
+	if [[ "$service" == "" ]]; then
+		echo "Your keys are:"
+		gpg --list-secret-keys | rip -o "<.+>"
+		exit 0
+	else
+		echo $2 >${dir}/.uid
+	fi
+	;;
+
 "--add" | "-a")
-	FILE="${DIR}/${2}.asc"
-	[[ -f $FILE ]] && echo "${2} already exists. Remove it first with 'otp --rm'" && exit
-	read -p "2fa TOTP Secret: " -s SECRET
-	gpg --armor --output $FILE -c <(echo $SECRET)
-	# gpg --armor --symmetric <(printf $SECRET)
+	# failsafe stuff
+	if [[ "$service" == "" ]]; then
+		echo "Usage: $0 --add service"
+		exit 1
+	elif [[ ! -f "$k" ]]; then
+		echo "$0 - Error: $k file not found."
+		exit 2
+	elif [[ -f "$kg" ]]; then
+		echo "$0 - Error: Encrypted file \"$kg\" exists."
+		exit 3
+	fi
+	gpg -r "${uid}" --encrypt "$k" && rm -vf "$k"
 	;;
 "--list" | "-l")
-	basename -s .asc $(ls -1 $DIR)
+	basename -s .gpg $(ls -1 $dir)
 	;;
 "--help" | "-h")
 	print_help
 	;;
 *)
-	FILE="${DIR}/${1}.asc"
-	if [[ -f $FILE ]]; then
-		oathtool --base32 --totp "$(gpg --quiet --armor --decrypt ${FILE})" | clip
-	else
-		printf "${1} hasn't been added yet. Use 'otp --add %s'\n" "${1}"
+	service="$1"
+	k="${dir}/${service}"
+	kg="${k}.gpg"
+	# failsafe stuff
+	if [[ "$1" == "" ]]; then
+		echo "Usage: $0 service"
+		exit 1
+	elif [[ ! -f "$kg" ]]; then
+		echo "Error: Encrypted file \"$kg\" not found."
+		exit 2
 	fi
+
+	# Get totp secret for given service
+	totp=$(gpg --quiet --decrypt "$kg")
+
+	# Generate 2FA totp
+	code=$(oathtool -b --totp "$totp")
+
+	## Copy to clipboard ##
+	echo $code | clip
+
+	# Make sure we don't have .key file in plain text format ever #
+	[ -f "$k" ] && echo "Warning - Plain text key file \"$k\" found."
 	;;
+
 esac

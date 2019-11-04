@@ -1,13 +1,13 @@
 #!/bin/bash
 
 DIR="$HOME/.otp"
-if [[ ! -d $DIR ]] ; then
+if [[ ! -d $DIR ]]; then
 	mkdir -p $DIR
 	chmod 700 $DIR
 fi
 
-function print_help () {
-cat << EOF
+function print_help() {
+	cat <<EOF
 otp is a command line tool to display 2FA totp codes, similar to Google/Lastpass/Microsoft Authenticator mobile apps.
 
 Options:
@@ -19,28 +19,29 @@ EOF
 }
 
 case "${1}" in
-	"--rm" | "-r")
-		FILE="${DIR}/${2}.asc"
-		[[ -f $FILE ]] && rm -vf $FILE
+"--rm" | "-r")
+	FILE="${DIR}/${2}.asc"
+	[[ -f $FILE ]] && rm -vf $FILE
 	;;
-	"--add" | "-a")
-		FILE="${DIR}/${2}.asc"
-		[[ -f $FILE ]] && echo "${2} already exists. Remove it first with 'otp --rm'" && exit
-		read -p "2fa TOTP Secret: " -s SECRET
-		gpg --armor --output $FILE -c <(echo $SECRET)
+"--add" | "-a")
+	FILE="${DIR}/${2}.asc"
+	[[ -f $FILE ]] && echo "${2} already exists. Remove it first with 'otp --rm'" && exit
+	read -p "2fa TOTP Secret: " -s SECRET
+	gpg --armor --output $FILE -c <(echo $SECRET)
+	# gpg --armor --symmetric <(printf $SECRET)
 	;;
-	"--list" | "-l")
-		basename -s .asc $(ls -1 $DIR)
+"--list" | "-l")
+	basename -s .asc $(ls -1 $DIR)
 	;;
-	"--help" | "-h")
-		print_help
+"--help" | "-h")
+	print_help
 	;;
-	*)
-		FILE="${DIR}/${1}.asc"
-		if [[ -f $FILE ]] ; then
-			oathtool --base32 --totp "$(gpg --quiet --armor --decrypt ${FILE})" | clip
-		else
-			printf "${1} hasn't been added yet. Use 'otp --add %s'\n" "${1}"
-		fi
+*)
+	FILE="${DIR}/${1}.asc"
+	if [[ -f $FILE ]]; then
+		oathtool --base32 --totp "$(gpg --quiet --armor --decrypt ${FILE})" | clip
+	else
+		printf "${1} hasn't been added yet. Use 'otp --add %s'\n" "${1}"
+	fi
 	;;
 esac
